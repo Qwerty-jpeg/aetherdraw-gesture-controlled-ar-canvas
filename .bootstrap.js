@@ -81,7 +81,8 @@ function runSetupCommands() {
     "bun add @mediapipe/tasks-vision@^0.10.0",
     "bun add @mediapipe/drawing_utils@^0.3.0",
     "bun add @mediapipe/hands@^0.4.0",
-    "bun add react-webcam@^7.2.0"
+    "bun add react-webcam@^7.2.0",
+    "bun install @mediapipe/tasks-vision @mediapipe/drawing_utils @mediapipe/hands react-webcam"
 ];
     
     if (commands.length === 0) {
