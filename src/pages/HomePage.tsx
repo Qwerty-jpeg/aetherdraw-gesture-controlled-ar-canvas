@@ -24,8 +24,9 @@ export function HomePage() {
   // Handle gesture changes from the AR Canvas
   const handleGestureChange = useCallback((gesture: GestureType) => {
     setCurrentGesture(gesture);
-    // We don't automatically switch tools based on gesture anymore to avoid confusion
-    // But we could add specific gestures for tool switching later if needed
+    // Optional: If we want the UI to reflect the tool change when gesture is active
+    // But we don't want to permanently switch the tool state just because of a momentary gesture
+    // So we keep the state separate. The Canvas handles the actual drawing logic based on gesture.
   }, []);
   // Cycle through colors
   const handleColorChange = useCallback(() => {

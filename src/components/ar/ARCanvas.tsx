@@ -49,7 +49,7 @@ export function ARCanvas({
   useEffect(() => {
     async function checkPermission() {
       try {
-        // @ts-expect-error - navigator.permissions.query support varies
+        // @ts-expect-error - navigator.permissions.query support varies across browsers
         const result = await navigator.permissions.query({ name: 'camera' });
         if (result.state === 'granted') {
           setPermissionStatus('granted');
@@ -196,16 +196,16 @@ export function ARCanvas({
             if (gesture !== lastGestureRef.current) {
                 lastGestureRef.current = gesture;
                 onGestureChange(gesture);
-                // Reset drawing state if we stop drawing
-                if (gesture !== 'DRAW') {
+                // Reset drawing state if we stop drawing/erasing
+                if (gesture !== 'DRAW' && gesture !== 'ERASE') {
                     isDrawingRef.current = false;
                     lastPointRef.current = null;
                 }
             }
             // Handle Specific Gestures
             const now = Date.now();
-            // 1. DRAWING (or ERASING)
-            if (gesture === 'DRAW') {
+            // 1. DRAWING or ERASING
+            if (gesture === 'DRAW' || gesture === 'ERASE') {
                 const indexTip = landmarks[8];
                 // Mirror x coordinate because webcam is mirrored via CSS
                 // Coordinates are normalized [0,1], so we multiply by canvas dimensions
@@ -226,7 +226,11 @@ export function ARCanvas({
                     ctx.beginPath();
                     ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
                     ctx.lineTo(smoothX, smoothY);
-                    if (activeToolRef.current === 'eraser') {
+                    // Determine tool based on gesture OR UI selection
+                    // If gesture is ERASE, force eraser.
+                    // If gesture is DRAW, use activeToolRef (which could be pen or eraser).
+                    const isErasing = gesture === 'ERASE' || activeToolRef.current === 'eraser';
+                    if (isErasing) {
                         ctx.globalCompositeOperation = 'destination-out';
                         ctx.lineWidth = 32; // Eraser is thicker
                     } else {
@@ -349,10 +353,15 @@ export function ARCanvas({
           onUserMediaError={(err) => {
               console.error("Webcam error:", err);
               // Only set error if we haven't already (prevents loops)
-              if (permissionStatus !== 'error') {
-                setPermissionStatus('error');
-                setErrorMessage(`Webcam error: ${(err as any)?.message || 'Unknown error'}`);
-              }
+              // We check against 'error' explicitly to avoid the TS2367 issue
+              // by ensuring we are checking the current state value
+              setPermissionStatus((prev) => {
+                  if (prev !== 'error') {
+                      setErrorMessage(`Webcam error: ${(err as any)?.message || 'Unknown error'}`);
+                      return 'error';
+                  }
+                  return prev;
+              });
           }}
           videoConstraints={{
               facingMode: "user",

@@ -42,12 +42,14 @@ export function ToolPalette({
               >
                 <span className="text-2xl">
                   {currentGesture === 'DRAW' && (activeTool === 'eraser' ? '🧼' : '✏️')}
+                  {currentGesture === 'ERASE' && '🤘'}
                   {currentGesture === 'HOVER' && '✋'}
                   {currentGesture === 'CHANGE_COLOR' && '✌️'}
                   {currentGesture === 'CLEAR' && '✊'}
                 </span>
                 <span className="font-hand text-xl font-bold text-sketch-dark">
                   {currentGesture === 'DRAW' && (activeTool === 'eraser' ? 'Erasing' : 'Drawing')}
+                  {currentGesture === 'ERASE' && 'Rock to Erase!'}
                   {currentGesture === 'HOVER' && 'Hovering'}
                   {currentGesture === 'CHANGE_COLOR' && 'Color Swap!'}
                   {currentGesture === 'CLEAR' && 'Clear?'}

@@ -1,5 +1,5 @@
 // Types for our gesture system
-export type GestureType = 'IDLE' | 'DRAW' | 'HOVER' | 'CHANGE_COLOR' | 'CLEAR';
+export type GestureType = 'IDLE' | 'DRAW' | 'HOVER' | 'CHANGE_COLOR' | 'CLEAR' | 'ERASE';
 export interface HandLandmark {
   x: number;
   y: number;
@@ -50,9 +50,8 @@ export function detectGesture(landmarks: HandLandmark[]): GestureType {
   if (!landmarks || landmarks.length < 21) return 'IDLE';
   const wrist = landmarks[0];
   // Thumb
-  const thumbTip = landmarks[4];
-  const thumbIP = landmarks[3];
-  // const thumbMCP = landmarks[2];
+  // const thumbTip = landmarks[4];
+  // const thumbIP = landmarks[3];
   // Fingers
   const indexTip = landmarks[8];
   const indexPIP = landmarks[6];
@@ -71,13 +70,9 @@ export function detectGesture(landmarks: HandLandmark[]): GestureType {
   const isMiddleExtended = isFingerExtended(middleTip, middlePIP, middleMCP, wrist);
   const isRingExtended = isFingerExtended(ringTip, ringPIP, ringMCP, wrist);
   const isPinkyExtended = isFingerExtended(pinkyTip, pinkyPIP, pinkyMCP, wrist);
-  // Thumb check: Is thumb tip further from pinky MCP than thumb IP is?
-  // This is a rough heuristic for "thumb extended away from palm"
-  // const isThumbExtended = calculateDistance(thumbTip, pinkyMCP) > calculateDistance(thumbIP, pinkyMCP);
-  // 1. DRAW GESTURE: Index finger is extended.
-  // We allow thumb to be extended or not (L-shape or pointing), as long as other fingers are closed.
-  if (isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
-    return 'DRAW';
+  // 1. ERASE GESTURE: Rock/Horns Sign (Index + Pinky extended, Middle + Ring closed)
+  if (isIndexExtended && !isMiddleExtended && !isRingExtended && isPinkyExtended) {
+    return 'ERASE';
   }
   // 2. CHANGE COLOR GESTURE: Victory/Peace sign (Index + Middle extended)
   // Ring and Pinky must be closed.
@@ -89,7 +84,13 @@ export function detectGesture(landmarks: HandLandmark[]): GestureType {
   if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended) {
     return 'HOVER';
   }
-  // 4. CLEAR GESTURE: Closed Fist (No fingers extended)
+  // 4. DRAW GESTURE: Index finger is extended.
+  // We allow thumb to be extended or not (L-shape or pointing), as long as other fingers are closed.
+  // IMPORTANT: Check this AFTER 'ERASE' and 'CHANGE_COLOR' because those also have index extended.
+  if (isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+    return 'DRAW';
+  }
+  // 5. CLEAR GESTURE: Closed Fist (No fingers extended)
   // We add a check to ensure it's not just a transition state
   if (!isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
     return 'CLEAR';
