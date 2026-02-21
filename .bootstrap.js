@@ -77,7 +77,12 @@ function updateWranglerJsonc() {
 }
 
 function runSetupCommands() {
-    const commands = [];
+    const commands = [
+    "bun add @mediapipe/tasks-vision@^0.10.0",
+    "bun add @mediapipe/drawing_utils@^0.3.0",
+    "bun add @mediapipe/hands@^0.4.0",
+    "bun add react-webcam@^7.2.0"
+];
     
     if (commands.length === 0) {
         console.log('⊘ No setup commands to run');
