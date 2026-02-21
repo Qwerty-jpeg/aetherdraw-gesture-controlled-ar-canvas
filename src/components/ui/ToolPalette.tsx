@@ -8,6 +8,7 @@ interface ToolPaletteProps {
   activeTool: 'pen' | 'eraser';
   currentGesture: GestureType;
   onClear: () => void;
+  onToolSelect: (tool: 'pen' | 'eraser') => void;
   colors: string[];
   visible?: boolean;
 }
@@ -16,6 +17,7 @@ export function ToolPalette({
   activeTool,
   currentGesture,
   onClear,
+  onToolSelect,
   colors,
   visible = true
 }: ToolPaletteProps) {
@@ -39,13 +41,13 @@ export function ToolPalette({
                 className="bg-white/90 backdrop-blur-sm border-2 border-sketch-dark px-4 py-2 rounded-full shadow-sketch flex items-center gap-2 mb-2"
               >
                 <span className="text-2xl">
-                  {currentGesture === 'DRAW' && '���️'}
+                  {currentGesture === 'DRAW' && (activeTool === 'eraser' ? '🧼' : '✏️')}
                   {currentGesture === 'HOVER' && '✋'}
-                  {currentGesture === 'CHANGE_COLOR' && '��️'}
+                  {currentGesture === 'CHANGE_COLOR' && '✌️'}
                   {currentGesture === 'CLEAR' && '✊'}
                 </span>
                 <span className="font-hand text-xl font-bold text-sketch-dark">
-                  {currentGesture === 'DRAW' && 'Drawing'}
+                  {currentGesture === 'DRAW' && (activeTool === 'eraser' ? 'Erasing' : 'Drawing')}
                   {currentGesture === 'HOVER' && 'Hovering'}
                   {currentGesture === 'CHANGE_COLOR' && 'Color Swap!'}
                   {currentGesture === 'CLEAR' && 'Clear?'}
@@ -57,18 +59,26 @@ export function ToolPalette({
           <div className="bg-white border-2 border-sketch-dark rounded-2xl shadow-sketch-lg p-3 flex items-center gap-2 sm:gap-4 pointer-events-auto overflow-x-auto max-w-full">
             {/* Tool Indicator */}
             <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 rounded-xl p-1 border border-gray-200 shrink-0">
-              <div className={cn(
-                "p-2 rounded-lg transition-all duration-300",
-                activeTool === 'pen' ? "bg-white shadow-sm text-sketch-dark" : "text-gray-400"
-              )}>
+              <button
+                onClick={() => onToolSelect('pen')}
+                className={cn(
+                  "p-2 rounded-lg transition-all duration-300 hover:bg-white/50",
+                  activeTool === 'pen' ? "bg-white shadow-sm text-sketch-dark ring-1 ring-black/5" : "text-gray-400"
+                )}
+                title="Pencil Tool"
+              >
                 <Pencil className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div className={cn(
-                "p-2 rounded-lg transition-all duration-300",
-                activeTool === 'eraser' ? "bg-white shadow-sm text-sketch-dark" : "text-gray-400"
-              )}>
+              </button>
+              <button
+                onClick={() => onToolSelect('eraser')}
+                className={cn(
+                  "p-2 rounded-lg transition-all duration-300 hover:bg-white/50",
+                  activeTool === 'eraser' ? "bg-white shadow-sm text-sketch-dark ring-1 ring-black/5" : "text-gray-400"
+                )}
+                title="Eraser Tool"
+              >
                 <Eraser className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
+              </button>
             </div>
             <div className="w-px h-8 bg-gray-200 shrink-0" />
             {/* Color Palette */}
@@ -85,6 +95,8 @@ export function ToolPalette({
                     activeColor === color && "ring-sketch-dark shadow-md"
                   )}
                   style={{ backgroundColor: color }}
+                  // If user clicks a color, we should probably switch back to pen automatically?
+                  // For now, let's just let them pick color.
                 />
               ))}
             </div>

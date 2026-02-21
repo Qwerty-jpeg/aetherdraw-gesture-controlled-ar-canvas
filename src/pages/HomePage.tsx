@@ -24,12 +24,8 @@ export function HomePage() {
   // Handle gesture changes from the AR Canvas
   const handleGestureChange = useCallback((gesture: GestureType) => {
     setCurrentGesture(gesture);
-    // Update active tool state based on gesture for UI feedback
-    if (gesture === 'DRAW') {
-        setActiveTool('pen');
-    } else if (gesture === 'HOVER') {
-        // Hover doesn't necessarily change tool, but we could set it to a neutral state if we wanted
-    }
+    // We don't automatically switch tools based on gesture anymore to avoid confusion
+    // But we could add specific gestures for tool switching later if needed
   }, []);
   // Cycle through colors
   const handleColorChange = useCallback(() => {
@@ -42,6 +38,8 @@ export function HomePage() {
         duration: 1500,
         position: 'top-center'
       });
+      // If we change color, we probably want to draw
+      setActiveTool('pen');
       return nextColor;
     });
   }, []);
@@ -50,6 +48,13 @@ export function HomePage() {
     toast.info('Canvas Cleared', {
         duration: 1500,
         style: { border: '2px solid #2A2A2A' }
+    });
+  }, []);
+  const handleToolSelect = useCallback((tool: 'pen' | 'eraser') => {
+    setActiveTool(tool);
+    toast.info(tool === 'pen' ? 'Pencil Selected' : 'Eraser Selected', {
+        duration: 1000,
+        position: 'bottom-center'
     });
   }, []);
   const handleCameraReady = useCallback(() => {
@@ -84,6 +89,7 @@ export function HomePage() {
       <div className="absolute inset-0 z-0">
         <ARCanvas
             activeColor={activeColor}
+            activeTool={activeTool}
             onGestureChange={handleGestureChange}
             onColorChange={handleColorChange}
             clearTrigger={clearTrigger}
@@ -97,6 +103,7 @@ export function HomePage() {
         activeTool={activeTool}
         currentGesture={currentGesture}
         onClear={handleClear}
+        onToolSelect={handleToolSelect}
         colors={PALETTE}
         visible={isCameraReady}
       />

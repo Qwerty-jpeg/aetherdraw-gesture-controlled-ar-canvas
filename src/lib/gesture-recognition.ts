@@ -52,7 +52,7 @@ export function detectGesture(landmarks: HandLandmark[]): GestureType {
   // Thumb
   const thumbTip = landmarks[4];
   const thumbIP = landmarks[3];
-  const thumbMCP = landmarks[2];
+  // const thumbMCP = landmarks[2];
   // Fingers
   const indexTip = landmarks[8];
   const indexPIP = landmarks[6];
@@ -73,7 +73,7 @@ export function detectGesture(landmarks: HandLandmark[]): GestureType {
   const isPinkyExtended = isFingerExtended(pinkyTip, pinkyPIP, pinkyMCP, wrist);
   // Thumb check: Is thumb tip further from pinky MCP than thumb IP is?
   // This is a rough heuristic for "thumb extended away from palm"
-  const isThumbExtended = calculateDistance(thumbTip, pinkyMCP) > calculateDistance(thumbIP, pinkyMCP);
+  // const isThumbExtended = calculateDistance(thumbTip, pinkyMCP) > calculateDistance(thumbIP, pinkyMCP);
   // 1. DRAW GESTURE: Index finger is extended.
   // We allow thumb to be extended or not (L-shape or pointing), as long as other fingers are closed.
   if (isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {

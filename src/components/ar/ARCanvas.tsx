@@ -6,6 +6,7 @@ import { Camera, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 interface ARCanvasProps {
   activeColor: string;
+  activeTool: 'pen' | 'eraser';
   onGestureChange: (gesture: GestureType) => void;
   onColorChange: () => void;
   clearTrigger: number;
@@ -14,6 +15,7 @@ interface ARCanvasProps {
 type PermissionStatus = 'idle' | 'prompting' | 'granted' | 'denied' | 'error';
 export function ARCanvas({
   activeColor,
+  activeTool,
   onGestureChange,
   onColorChange,
   clearTrigger,
@@ -29,16 +31,20 @@ export function ARCanvas({
   const lastPointRef = useRef<{x: number, y: number} | null>(null);
   const isDrawingRef = useRef<boolean>(false);
   const gestureCooldownRef = useRef<number>(0);
-  // Store activeColor in a ref to access it inside the animation loop without restarting the loop
+  // Store activeColor and activeTool in refs to access inside animation loop
   const activeColorRef = useRef(activeColor);
+  const activeToolRef = useRef(activeTool);
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  // Update the ref when prop changes
+  // Update refs when props change
   useEffect(() => {
     activeColorRef.current = activeColor;
   }, [activeColor]);
+  useEffect(() => {
+    activeToolRef.current = activeTool;
+  }, [activeTool]);
   // Check initial permission state if possible
   useEffect(() => {
     async function checkPermission() {
@@ -64,16 +70,15 @@ export function ARCanvas({
     setErrorMessage(null);
     try {
       // We request the stream to trigger the browser prompt
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
           facingMode: "user"
-        } 
+        }
       });
       // If we get here, permission is granted.
       // We stop the tracks immediately because react-webcam will request its own stream.
-      // This is just to ensure we have permission before mounting the Webcam component.
       stream.getTracks().forEach(track => track.stop());
       setPermissionStatus('granted');
       toast.success("Camera access granted!");
@@ -141,7 +146,7 @@ export function ARCanvas({
         handLandmarkerRef.current.close();
       }
     };
-  }, [permissionStatus, onCameraReady]);
+  }, [permissionStatus, onCameraReady, retryCount]);
   // Handle Canvas Clearing
   useEffect(() => {
     if (clearTrigger > 0 && canvasRef.current) {
@@ -178,7 +183,7 @@ export function ARCanvas({
       // Restore context properties after resize (resizing clears context state)
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.lineWidth = 8;
+      ctx.lineWidth = activeToolRef.current === 'eraser' ? 24 : 8;
     }
     const startTimeMs = performance.now();
     try {
@@ -199,25 +204,43 @@ export function ARCanvas({
             }
             // Handle Specific Gestures
             const now = Date.now();
-            // 1. DRAWING
+            // 1. DRAWING (or ERASING)
             if (gesture === 'DRAW') {
                 const indexTip = landmarks[8];
                 // Mirror x coordinate because webcam is mirrored via CSS
                 // Coordinates are normalized [0,1], so we multiply by canvas dimensions
                 const x = (1 - indexTip.x) * canvas.width;
                 const y = indexTip.y * canvas.height;
+                // Smoothing: Simple moving average
+                // If we have a last point, we can smooth the current point towards it slightly
+                // to reduce jitter.
+                let smoothX = x;
+                let smoothY = y;
+                if (lastPointRef.current) {
+                    // 0.7 weight to new point, 0.3 to old point (adjust as needed)
+                    smoothX = x * 0.6 + lastPointRef.current.x * 0.4;
+                    smoothY = y * 0.6 + lastPointRef.current.y * 0.4;
+                }
                 // Draw line
                 if (lastPointRef.current) {
                     ctx.beginPath();
                     ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-                    ctx.lineTo(x, y);
-                    ctx.strokeStyle = activeColorRef.current; // Use ref to avoid dependency
-                    ctx.lineWidth = 8;
+                    ctx.lineTo(smoothX, smoothY);
+                    if (activeToolRef.current === 'eraser') {
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.lineWidth = 32; // Eraser is thicker
+                    } else {
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.strokeStyle = activeColorRef.current;
+                        ctx.lineWidth = 8;
+                    }
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
                     ctx.stroke();
+                    // Reset composite operation to default just in case
+                    ctx.globalCompositeOperation = 'source-over';
                 }
-                lastPointRef.current = { x, y };
+                lastPointRef.current = { x: smoothX, y: smoothY };
                 isDrawingRef.current = true;
             }
             // 2. COLOR CHANGE (with cooldown)
@@ -242,7 +265,8 @@ export function ARCanvas({
             }
         }
     } catch (e) {
-        console.warn("Detection error:", e);
+        // Suppress WebGL warnings in console if possible, or just log once
+        // console.warn("Detection error:", e);
     }
     requestRef.current = requestAnimationFrame(predictWebcam);
   }, [onGestureChange, onColorChange]);
