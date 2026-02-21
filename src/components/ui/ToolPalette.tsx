@@ -22,7 +22,7 @@ export function ToolPalette({
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div 
+        <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
@@ -39,9 +39,9 @@ export function ToolPalette({
                 className="bg-white/90 backdrop-blur-sm border-2 border-sketch-dark px-4 py-2 rounded-full shadow-sketch flex items-center gap-2 mb-2"
               >
                 <span className="text-2xl">
-                  {currentGesture === 'DRAW' && '✏️'}
+                  {currentGesture === 'DRAW' && '���️'}
                   {currentGesture === 'HOVER' && '✋'}
-                  {currentGesture === 'CHANGE_COLOR' && '✌️'}
+                  {currentGesture === 'CHANGE_COLOR' && '��️'}
                   {currentGesture === 'CLEAR' && '✊'}
                 </span>
                 <span className="font-hand text-xl font-bold text-sketch-dark">
@@ -54,25 +54,25 @@ export function ToolPalette({
             )}
           </AnimatePresence>
           {/* Main Toolbar */}
-          <div className="bg-white border-2 border-sketch-dark rounded-2xl shadow-sketch-lg p-3 flex items-center gap-4 pointer-events-auto">
+          <div className="bg-white border-2 border-sketch-dark rounded-2xl shadow-sketch-lg p-3 flex items-center gap-2 sm:gap-4 pointer-events-auto overflow-x-auto max-w-full">
             {/* Tool Indicator */}
-            <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1 border border-gray-200">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 rounded-xl p-1 border border-gray-200 shrink-0">
               <div className={cn(
                 "p-2 rounded-lg transition-all duration-300",
                 activeTool === 'pen' ? "bg-white shadow-sm text-sketch-dark" : "text-gray-400"
               )}>
-                <Pencil className="w-6 h-6" />
+                <Pencil className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div className={cn(
                 "p-2 rounded-lg transition-all duration-300",
                 activeTool === 'eraser' ? "bg-white shadow-sm text-sketch-dark" : "text-gray-400"
               )}>
-                <Eraser className="w-6 h-6" />
+                <Eraser className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
             </div>
-            <div className="w-px h-8 bg-gray-200" />
+            <div className="w-px h-8 bg-gray-200 shrink-0" />
             {/* Color Palette */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
               {colors.map((color) => (
                 <motion.div
                   key={color}
@@ -81,21 +81,21 @@ export function ToolPalette({
                     y: activeColor === color ? -4 : 0
                   }}
                   className={cn(
-                    "w-8 h-8 rounded-full border-2 border-white shadow-sm cursor-pointer ring-2 ring-transparent transition-all",
+                    "w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm cursor-pointer ring-2 ring-transparent transition-all shrink-0",
                     activeColor === color && "ring-sketch-dark shadow-md"
                   )}
                   style={{ backgroundColor: color }}
                 />
               ))}
             </div>
-            <div className="w-px h-8 bg-gray-200" />
+            <div className="w-px h-8 bg-gray-200 shrink-0" />
             {/* Actions */}
             <button
               onClick={onClear}
-              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors active:scale-95"
+              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors active:scale-95 shrink-0"
               title="Clear Canvas"
             >
-              <Trash2 className="w-6 h-6" />
+              <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
         </motion.div>

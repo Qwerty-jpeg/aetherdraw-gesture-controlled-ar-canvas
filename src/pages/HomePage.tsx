@@ -69,6 +69,7 @@ export function HomePage() {
             </h1>
           </div>
         </div>
+        {/* Only show help button if camera is ready */}
         {isCameraReady && (
           <button
             onClick={() => setShowInstructions(true)}
@@ -90,6 +91,7 @@ export function HomePage() {
         />
       </div>
       {/* UI Overlays - Z-Index 50+ */}
+      {/* Only show tool palette if camera is ready to avoid cluttering the permission screen */}
       <ToolPalette
         activeColor={activeColor}
         activeTool={activeTool}
