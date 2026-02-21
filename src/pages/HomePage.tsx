@@ -23,9 +23,11 @@ export function HomePage() {
   // Handle gesture changes from the AR Canvas
   const handleGestureChange = useCallback((gesture: GestureType) => {
     setCurrentGesture(gesture);
-    // Optional: Add sound effects or haptic feedback here
-    if (gesture === 'CHANGE_COLOR') {
-      // Visual feedback handled in ToolPalette
+    // Update active tool state based on gesture for UI feedback
+    if (gesture === 'DRAW') {
+        setActiveTool('pen');
+    } else if (gesture === 'HOVER') {
+        // Hover doesn't necessarily change tool, but we could set it to a neutral state if we wanted
     }
   }, []);
   // Cycle through colors
@@ -35,15 +37,19 @@ export function HomePage() {
       const nextIndex = (currentIndex + 1) % PALETTE.length;
       const nextColor = PALETTE[nextIndex];
       toast.success('Color Swapped!', {
-        style: { backgroundColor: nextColor, color: '#000' },
-        duration: 1500
+        style: { backgroundColor: nextColor, color: '#000', border: '2px solid #2A2A2A' },
+        duration: 1500,
+        position: 'top-center'
       });
       return nextColor;
     });
   }, []);
   const handleClear = useCallback(() => {
     setClearTrigger(prev => prev + 1);
-    toast.info('Canvas Cleared', { duration: 1500 });
+    toast.info('Canvas Cleared', { 
+        duration: 1500,
+        style: { border: '2px solid #2A2A2A' }
+    });
   }, []);
   return (
     <div className="relative w-full h-screen overflow-hidden bg-sketch-dark">
@@ -60,18 +66,21 @@ export function HomePage() {
         <button
           onClick={() => setShowInstructions(true)}
           className="bg-white/90 backdrop-blur-sm p-3 rounded-full border-2 border-sketch-dark shadow-sketch hover:scale-110 transition-transform pointer-events-auto group"
+          aria-label="Help"
         >
           <HelpCircle className="w-6 h-6 text-sketch-dark group-hover:rotate-12 transition-transform" />
         </button>
       </div>
-      {/* Main AR Canvas */}
-      <ARCanvas
-        activeColor={activeColor}
-        onGestureChange={handleGestureChange}
-        onColorChange={handleColorChange}
-        clearTrigger={clearTrigger}
-      />
-      {/* UI Overlays */}
+      {/* Main AR Canvas - Z-Index 0 */}
+      <div className="absolute inset-0 z-0">
+        <ARCanvas
+            activeColor={activeColor}
+            onGestureChange={handleGestureChange}
+            onColorChange={handleColorChange}
+            clearTrigger={clearTrigger}
+        />
+      </div>
+      {/* UI Overlays - Z-Index 50+ */}
       <ToolPalette
         activeColor={activeColor}
         activeTool={activeTool}
@@ -84,7 +93,7 @@ export function HomePage() {
         onClose={() => setShowInstructions(false)}
       />
       {/* Toast Notifications */}
-      <Toaster position="top-center" />
+      <Toaster />
     </div>
   );
 }

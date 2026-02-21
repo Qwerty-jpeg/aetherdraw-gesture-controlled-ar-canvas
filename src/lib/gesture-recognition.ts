@@ -11,8 +11,8 @@ export interface HandLandmark {
  */
 function calculateDistance(p1: HandLandmark, p2: HandLandmark): number {
   return Math.sqrt(
-    Math.pow(p1.x - p2.x, 2) + 
-    Math.pow(p1.y - p2.y, 2) + 
+    Math.pow(p1.x - p2.x, 2) +
+    Math.pow(p1.y - p2.y, 2) +
     Math.pow(p1.z - p2.z, 2)
   );
 }
@@ -22,20 +22,22 @@ function calculateDistance(p1: HandLandmark, p2: HandLandmark): number {
  * relative to the wrist to determine extension.
  */
 function isFingerExtended(
-  tip: HandLandmark, 
-  pip: HandLandmark, 
-  mcp: HandLandmark, 
+  tip: HandLandmark,
+  pip: HandLandmark,
+  mcp: HandLandmark,
   wrist: HandLandmark
 ): boolean {
-  // Simple check: is the tip further from the wrist than the PIP joint?
-  // This works well for most upright hand positions
+  // Check distance from wrist to tip vs wrist to PIP
   const tipDist = calculateDistance(tip, wrist);
   const pipDist = calculateDistance(pip, wrist);
-  return tipDist > pipDist;
+  const mcpDist = calculateDistance(mcp, wrist);
+  // Robust check: Tip must be further than PIP, and Tip must be further than MCP
+  // This helps prevent false positives when fingers are curled but angled towards camera
+  return tipDist > pipDist && tipDist > mcpDist;
 }
 /**
  * Analyzes hand landmarks to detect specific gestures
- * 
+ *
  * Landmarks mapping (MediaPipe Hands):
  * 0: Wrist
  * 4: Thumb tip
@@ -47,8 +49,11 @@ function isFingerExtended(
 export function detectGesture(landmarks: HandLandmark[]): GestureType {
   if (!landmarks || landmarks.length < 21) return 'IDLE';
   const wrist = landmarks[0];
+  // Thumb
   const thumbTip = landmarks[4];
   const thumbIP = landmarks[3];
+  const thumbMCP = landmarks[2];
+  // Fingers
   const indexTip = landmarks[8];
   const indexPIP = landmarks[6];
   const indexMCP = landmarks[5];
@@ -66,19 +71,21 @@ export function detectGesture(landmarks: HandLandmark[]): GestureType {
   const isMiddleExtended = isFingerExtended(middleTip, middlePIP, middleMCP, wrist);
   const isRingExtended = isFingerExtended(ringTip, ringPIP, ringMCP, wrist);
   const isPinkyExtended = isFingerExtended(pinkyTip, pinkyPIP, pinkyMCP, wrist);
-  // Thumb is tricky, usually check if it's away from the palm
-  // For simplicity in this specific set of gestures, we might not need strict thumb checking
-  // but let's do a basic check
-  // const isThumbExtended = calculateDistance(thumbTip, pinkyMCP) > calculateDistance(thumbIP, pinkyMCP);
-  // 1. DRAW GESTURE: Only Index finger is extended
+  // Thumb check: Is thumb tip further from pinky MCP than thumb IP is?
+  // This is a rough heuristic for "thumb extended away from palm"
+  const isThumbExtended = calculateDistance(thumbTip, pinkyMCP) > calculateDistance(thumbIP, pinkyMCP);
+  // 1. DRAW GESTURE: Index finger is extended.
+  // We allow thumb to be extended or not (L-shape or pointing), as long as other fingers are closed.
   if (isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
     return 'DRAW';
   }
   // 2. CHANGE COLOR GESTURE: Victory/Peace sign (Index + Middle extended)
+  // Ring and Pinky must be closed.
   if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended) {
     return 'CHANGE_COLOR';
   }
   // 3. HOVER/STOP GESTURE: Open Palm (All fingers extended)
+  // At least Index, Middle, Ring, Pinky must be extended.
   if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended) {
     return 'HOVER';
   }
